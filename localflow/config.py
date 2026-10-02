@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
+import sys
 
 CONFIG_PATH = Path.home() / ".localflow.json"
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
@@ -13,7 +14,10 @@ HINGLISH_PROMPT = (
 
 @dataclass
 class Config:
+    # "auto" = MLX on Apple Silicon, faster-whisper (CUDA or CPU) everywhere else
+    asr_backend: str = "auto"
     asr_model: str = str(MODELS_DIR / "whisper-large-v3-turbo-mlx")
+    faster_whisper_model: str = "large-v3-turbo"
     # "hi" recognises Hindi words most accurately (in Devanagari); the cleanup
     # step transliterates to Roman. "en" writes Roman directly but misspells.
     asr_language: str = "hi"
@@ -21,8 +25,8 @@ class Config:
     cleanup_enabled: bool = True
     cleanup_model: str = "qwen2.5:7b-instruct"
     ollama_url: str = "http://localhost:11434"
-    # pynput key name held to dictate
-    hotkey: str = "alt_r"
+    # pynput key name held to dictate. Right Alt is AltGr on many Windows/Linux layouts.
+    hotkey: str = "alt_r" if sys.platform == "darwin" else "ctrl_r"
     vocabulary: list[str] = field(default_factory=list)
 
     @classmethod
