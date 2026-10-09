@@ -40,6 +40,11 @@ class Dictation:
             self.recording = True
             self.on_state(RECORDING)
             self.recorder.start()
+        elif key != self.hotkey and self.recording:
+            # hotkey used as a modifier (e.g. ⌥← word jump): drop the recording
+            self.recording = False
+            self.recorder.stop()
+            self.on_state(IDLE)
 
     def _on_release(self, key):
         if key == self.hotkey and self.recording:

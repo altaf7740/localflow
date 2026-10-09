@@ -28,7 +28,7 @@ class Config:
     cleanup_model: str = "qwen2.5:7b-instruct"
     ollama_url: str = "http://localhost:11434"
     # pynput key name held to dictate. Right Alt is AltGr on many Windows/Linux layouts.
-    hotkey: str = "alt_r" if sys.platform == "darwin" else "ctrl_r"
+    hotkey: str = "alt_l" if sys.platform == "darwin" else "ctrl_r"
     vocabulary: list[str] = field(default_factory=list)
 
     @classmethod

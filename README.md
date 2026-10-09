@@ -1,7 +1,7 @@
 # LocalFlow
 
 Fully local, Wispr Flow–style dictation for macOS, Windows and Linux that handles Hinglish.
-Hold the hotkey (**Right ⌥** on macOS, **Right Ctrl** on Windows/Linux), speak, release — cleaned-up text (Hindi in Roman script) is pasted into the focused app.
+Hold the hotkey (**Left ⌥** on macOS, **Right Ctrl** on Windows/Linux), speak, release — cleaned-up text (Hindi in Roman script) is pasted into the focused app.
 
 ## Pipeline
 
@@ -22,7 +22,7 @@ Nothing leaves the machine.
 |---|---|---|---|
 | ASR | MLX (GPU) | faster-whisper (CUDA or CPU) | faster-whisper (CUDA or CPU) |
 | UI | menu bar | system tray | system tray |
-| Hotkey | Right ⌥ | Right Ctrl | Right Ctrl |
+| Hotkey | Left ⌥ | Right Ctrl | Right Ctrl |
 
 Common to all: install [uv](https://docs.astral.sh/uv/) and [Ollama](https://ollama.com), then
 
