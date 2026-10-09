@@ -1,8 +1,10 @@
 """Convert a HuggingFace transformers Whisper checkpoint to mlx-whisper format.
 
-Usage: uv run python scripts/convert_hf_whisper.py <hf_repo_or_dir> <out_dir>
+Usage: make model
+   or: uv run python -m scripts.convert_hf_whisper <hf_repo_or_dir> <out_dir>
 Key mapping follows ml-explore/mlx-examples whisper/convert.py.
 """
+
 import json
 import sys
 from pathlib import Path

@@ -1,3 +1,18 @@
-models/
-.venv/
+# Python-generated files
 __pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Model weights (converted locally, see `make model`)
+src/static/models/*
+!src/static/models/.gitkeep
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

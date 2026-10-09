@@ -1,10 +1,12 @@
-from dataclasses import dataclass, field
-from pathlib import Path
 import json
 import sys
+from dataclasses import dataclass, field
+from pathlib import Path
 
 CONFIG_PATH = Path.home() / ".localflow.json"
-MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
+BASE_DIR = Path(__file__).resolve().parents[2]  # src/
+STATIC_DIR = BASE_DIR / "static"
+MODELS_DIR = STATIC_DIR / "models"
 
 HINGLISH_PROMPT = (
     "Haan bhai, main abhi ghar pe hoon. Tum log lunch ke baad call join kar lena, "

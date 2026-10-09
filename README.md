@@ -27,18 +27,17 @@ Nothing leaves the machine.
 Common to all: install [uv](https://docs.astral.sh/uv/) and [Ollama](https://ollama.com), then
 
 ```sh
-uv sync
-ollama pull qwen2.5:7b-instruct
-uv run localflow
+make install   # uv sync --all-groups
+make model     # convert Whisper to MLX (Apple Silicon only) + ollama pull qwen2.5:7b-instruct
+make start
 ```
+
+Run `make` to list every target.
 
 ### macOS (Apple Silicon)
 
-Convert Whisper to MLX once (or set `asr_model` to `"mlx-community/whisper-large-v3-turbo"`):
-
-```sh
-uv run python scripts/convert_hf_whisper.py openai/whisper-large-v3-turbo models/whisper-large-v3-turbo-mlx
-```
+`make model` converts the HuggingFace Whisper checkpoint into `src/static/models/` (or set
+`asr_model` to `"mlx-community/whisper-large-v3-turbo"` to download an MLX build instead).
 
 Grant your terminal **Microphone**, **Accessibility** and **Input Monitoring** in
 System Settings → Privacy & Security, then restart the app.
@@ -64,7 +63,7 @@ in `~/.localflow.json` for ~1.5 s at lower accuracy.
 
 ## Config
 
-Optional `~/.localflow.json` overrides any field in `localflow/config.py`, e.g.:
+Optional `~/.localflow.json` overrides any field in `src/core/config/settings.py`, e.g.:
 
 ```json
 { "hotkey": "cmd_r", "vocabulary": ["Kubernetes", "Altaf", "Taikisha"], "faster_whisper_model": "large-v3" }
@@ -75,10 +74,46 @@ Optional `~/.localflow.json` overrides any field in `localflow/config.py`, e.g.:
 ## Eval
 
 ```sh
-uv run python eval/run_eval.py              # ASR + cleanup
-uv run python eval/run_eval.py --no-cleanup # ASR only
+make eval                                   # ASR + cleanup
+make eval ARGS="--no-cleanup"               # ASR only
+make eval ARGS="--llm qwen2.5:7b-instruct"  # try another Ollama model
 ```
 
-Add your own recordings to `eval/clips/<id>.wav` with the expected Roman-Hinglish text in
-`eval/references.tsv`. The bundled clips are synthetic (macOS "Lekha" voice) — real voice samples
-are a much better benchmark.
+Add your own recordings to `src/static/eval/clips/<id>.wav` (16 kHz mono) with the expected
+Roman-Hinglish text in `src/static/eval/references.tsv`. The bundled clips are synthetic
+(macOS "Lekha" voice) — real voice samples are a much better benchmark.
+
+## Development
+
+```sh
+make test       # pytest (src/tests)
+make lint-fix   # ruff check --fix + ruff format
+make check      # lint-fix + test
+```
+
+## Project structure
+
+```
+├── makefile
+├── pyproject.toml
+├── scripts/
+│   ├── convert_hf_whisper.py   # HF Whisper → MLX weights (`make model`)
+│   └── run_eval.py             # WER benchmark (`make eval`)
+└── src/
+    ├── main.py                 # entry point: menu bar (macOS) or tray (Windows/Linux)
+    ├── core/
+    │   ├── config/settings.py  # Config + ~/.localflow.json overrides
+    │   └── dictation.py        # hold-to-talk loop shared by every UI
+    ├── shared/
+    │   ├── audio.py            # mic recorder, WAV loading
+    │   └── paste.py            # clipboard + ⌘V / Ctrl+V
+    ├── modules/
+    │   ├── asr/                # Whisper: MLX or faster-whisper
+    │   ├── cleanup/            # Ollama cleanup + prompts
+    │   ├── evaluation/         # WER metrics
+    │   └── ui/                 # menubar.py (rumps), tray.py (pystray)
+    ├── static/
+    │   ├── models/             # converted Whisper weights (gitignored)
+    │   └── eval/               # benchmark clips + references
+    └── tests/
+```

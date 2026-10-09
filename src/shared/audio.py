@@ -16,9 +16,7 @@ class Recorder:
     def start(self):
         with self._lock:
             self._chunks = []
-        self._stream = sd.InputStream(
-            samplerate=SAMPLE_RATE, channels=1, dtype="float32", callback=self._on_audio
-        )
+        self._stream = sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32", callback=self._on_audio)
         self._stream.start()
 
     def _on_audio(self, indata, frames, time, status):

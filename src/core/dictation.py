@@ -4,10 +4,11 @@ from typing import Callable
 
 from pynput import keyboard
 
-from . import asr, cleanup
-from .audio import Recorder
-from .config import Config
-from .paste import paste_text
+from ..modules.asr import services as asr
+from ..modules.cleanup import services as cleanup
+from ..shared.audio import Recorder
+from ..shared.paste import paste_text
+from .config.settings import Config
 
 LOADING, IDLE, RECORDING, WORKING = "loading", "idle", "recording", "working"
 

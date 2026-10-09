@@ -3,8 +3,8 @@ import sys
 
 import numpy as np
 
-from .audio import load_wav
-from .config import Config
+from ...core.config.settings import Config
+from ...shared.audio import load_wav
 
 MIN_SAMPLES = 16000 // 4  # ignore taps shorter than 250 ms
 APPLE_SILICON = sys.platform == "darwin" and platform.machine() == "arm64"

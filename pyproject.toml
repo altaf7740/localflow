@@ -2,27 +2,53 @@
 name = "localflow"
 version = "0.1.0"
 description = "Fully local Hinglish dictation, Wispr Flow style"
+readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.5.3",
-    "pynput>=1.8.2",
-    "requests>=2.34.2",
-    "sounddevice>=0.5.6",
-    # macOS
-    "mlx-whisper>=0.4.3; sys_platform == 'darwin' and platform_machine == 'arm64'",
-    "pyobjc-framework-cocoa>=12.2.2; sys_platform == 'darwin'",
-    "pyobjc-framework-quartz>=12.2.2; sys_platform == 'darwin'",
-    "rumps>=0.4.0; sys_platform == 'darwin'",
-    # Windows, Linux, Intel Macs
-    "faster-whisper>=1.1.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
-    "pillow>=10.0; sys_platform != 'darwin'",
-    "pyperclip>=1.9; sys_platform != 'darwin'",
-    "pystray>=0.19.5; sys_platform != 'darwin'",
+    # ===========================================================================
+    # CORE  (src/main.py, src/core/, src/shared/)
+    # ===========================================================================
+    "numpy>=2.5.3",                 # Audio buffers
+    "sounddevice>=0.5.6",           # Microphone capture (src/shared/audio.py)
+    "pynput>=1.8.2",                # Global hotkey + Ctrl+V on Windows/Linux (src/core/dictation.py)
+    "requests>=2.34.2",             # Ollama HTTP API (src/modules/cleanup/)
+    # ===========================================================================
+    # macOS  (src/modules/ui/menubar.py, src/shared/paste.py)
+    # ===========================================================================
+    "mlx-whisper>=0.4.3; sys_platform == 'darwin' and platform_machine == 'arm64'",  # Whisper on Apple GPU
+    "pyobjc-framework-cocoa>=12.2.2; sys_platform == 'darwin'",                      # Clipboard
+    "pyobjc-framework-quartz>=12.2.2; sys_platform == 'darwin'",                     # ⌘V key events
+    "rumps>=0.4.0; sys_platform == 'darwin'",                                        # Menu-bar app
+    # ===========================================================================
+    # Windows, Linux, Intel Macs  (src/modules/ui/tray.py, src/modules/asr/)
+    # ===========================================================================
+    "faster-whisper>=1.1.0; sys_platform != 'darwin' or platform_machine != 'arm64'",  # Whisper on CUDA/CPU
+    "pillow>=10.0; sys_platform != 'darwin'",                                          # Tray icons
+    "pyperclip>=1.9; sys_platform != 'darwin'",                                        # Clipboard
+    "pystray>=0.19.5; sys_platform != 'darwin'",                                       # System tray
 ]
 
-[project.scripts]
-localflow = "localflow.app:main"
+[dependency-groups]
+dev = [
+    # Testing (src/tests/)
+    "pytest>=8.0.0",
+    # Code Quality
+    "ruff>=0.12.2",
+]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.ruff]
+indent-width = 4
+line-length = 120
+include = ["src/**/*.py", "scripts/**/*.py"]
+cache-dir = ".ruff_cache"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+fixable = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+# src/ is a namespace package (no __init__.py), so the project root must be on
+# sys.path for "from src.…" imports to resolve.
+pythonpath = ["."]

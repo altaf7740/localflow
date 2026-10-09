@@ -1,7 +1,7 @@
 import rumps
 
-from .config import Config
-from .core import IDLE, LOADING, RECORDING, WORKING, Dictation
+from ...core.config.settings import Config
+from ...core.dictation import IDLE, LOADING, RECORDING, WORKING, Dictation
 
 TITLES = {LOADING: "…", IDLE: "🎙", RECORDING: "🔴", WORKING: "⏳"}
 

@@ -1,13 +1,18 @@
 """System-tray UI for Windows and Linux."""
+
 import pystray
 from PIL import Image, ImageDraw
 
-from .config import Config
-from .core import IDLE, LOADING, RECORDING, WORKING, Dictation
+from ...core.config.settings import Config
+from ...core.dictation import IDLE, LOADING, RECORDING, WORKING, Dictation
 
 COLORS = {LOADING: "#9e9e9e", IDLE: "#2e7d32", RECORDING: "#d32f2f", WORKING: "#f9a825"}
-TOOLTIPS = {LOADING: "LocalFlow: loading models…", IDLE: "LocalFlow: ready",
-            RECORDING: "LocalFlow: listening", WORKING: "LocalFlow: transcribing"}
+TOOLTIPS = {
+    LOADING: "LocalFlow: loading models…",
+    IDLE: "LocalFlow: ready",
+    RECORDING: "LocalFlow: listening",
+    WORKING: "LocalFlow: transcribing",
+}
 
 
 def _dot(color: str) -> Image.Image:
