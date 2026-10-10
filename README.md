@@ -71,6 +71,15 @@ Optional `~/.localflow.json` overrides any field in `src/core/config/settings.py
 
 `vocabulary` is appended to the Whisper prompt to bias recognition of names and jargon.
 
+### Microphone
+
+Pick the input device from the **Microphone** menu (menu bar / tray); the choice is saved as
+`input_device`. If the chosen mic is unplugged, LocalFlow falls back to the system default.
+
+When a recording is pure digital silence — MacBook lid closed, mic muted or disconnected —
+LocalFlow doesn't transcribe it. On macOS a dialog offers to switch to another mic; on
+Windows/Linux a tray notification asks you to pick one.
+
 ## Eval
 
 ```sh

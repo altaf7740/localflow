@@ -30,6 +30,8 @@ class Config:
     # pynput key name held to dictate. Right Alt is AltGr on many Windows/Linux layouts.
     hotkey: str = "alt_l" if sys.platform == "darwin" else "ctrl_r"
     vocabulary: list[str] = field(default_factory=list)
+    # input device name; empty = system default
+    input_device: str = ""
 
     @classmethod
     def load(cls) -> "Config":
@@ -38,3 +40,10 @@ class Config:
             known = {k: v for k, v in data.items() if k in cls.__dataclass_fields__}
             return cls(**known)
         return cls()
+
+    def save(self, *keys: str):
+        """Persist the given fields to ~/.localflow.json, keeping whatever else is in the file."""
+        data = json.loads(CONFIG_PATH.read_text()) if CONFIG_PATH.exists() else {}
+        for key in keys:
+            data[key] = getattr(self, key)
+        CONFIG_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False))

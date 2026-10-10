@@ -23,3 +23,15 @@ def test_config_file_overrides_and_ignores_unknown_keys(tmp_path, monkeypatch):
 
 def test_models_dir_is_inside_static():
     assert settings.MODELS_DIR == settings.BASE_DIR / "static" / "models"
+
+
+def test_save_persists_only_given_keys_and_keeps_existing(tmp_path, monkeypatch):
+    path = tmp_path / "localflow.json"
+    path.write_text(json.dumps({"vocabulary": ["Altaf"]}))
+    monkeypatch.setattr(settings, "CONFIG_PATH", path)
+    cfg = Config.load()
+    cfg.input_device = "Altaf’s iPhone Microphone"
+    cfg.save("input_device")
+    saved = json.loads(path.read_text())
+    assert saved == {"vocabulary": ["Altaf"], "input_device": "Altaf’s iPhone Microphone"}
+    assert Config.load().input_device == "Altaf’s iPhone Microphone"

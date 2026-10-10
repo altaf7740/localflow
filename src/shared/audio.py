@@ -13,11 +13,31 @@ class Recorder:
         self._lock = threading.Lock()
         self._stream: sd.InputStream | None = None
 
-    def start(self):
+    def input_devices(self) -> list[str]:
+        """Current input device names, re-scanned so mics plugged in after launch show up."""
         with self._lock:
+            return self._scan()
+
+    def default_device(self) -> str:
+        return sd.query_devices(kind="input")["name"]
+
+    def start(self, device: str = "") -> str:
+        """Start recording from `device` (system default if empty or unplugged). Returns the device used."""
+        with self._lock:
+            if not device or device not in self._scan():
+                device = self.default_device()
             self._chunks = []
-        self._stream = sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32", callback=self._on_audio)
-        self._stream.start()
+            self._stream = sd.InputStream(
+                samplerate=SAMPLE_RATE, channels=1, dtype="float32", device=device, callback=self._on_audio
+            )
+            self._stream.start()
+        return device
+
+    def _scan(self) -> list[str]:
+        if self._stream is None:  # re-initialising PortAudio would kill an open stream
+            sd._terminate()
+            sd._initialize()
+        return [d["name"] for d in sd.query_devices() if d["max_input_channels"] > 0]
 
     def _on_audio(self, indata, frames, time, status):
         with self._lock:
@@ -32,6 +52,12 @@ class Recorder:
             if not self._chunks:
                 return np.zeros(0, dtype=np.float32)
             return np.concatenate(self._chunks)
+
+
+def is_dead_mic(audio: np.ndarray) -> bool:
+    """True when a recording is digital silence: every real mic has a noise floor, so all-zero
+    audio means the device delivers nothing (MacBook lid closed, muted or disconnected mic)."""
+    return audio.size >= SAMPLE_RATE // 4 and not np.any(audio)
 
 
 def load_wav(path: str) -> np.ndarray:
