@@ -11,6 +11,7 @@ from pathlib import Path
 
 import mlx.core as mx
 from huggingface_hub import snapshot_download
+from huggingface_hub.errors import LocalEntryNotFoundError
 
 REPLACEMENTS = [
     ("model.", ""),
@@ -40,7 +41,14 @@ def remap(key: str) -> str:
 
 
 def main(src: str, out: str):
-    src_dir = Path(src) if Path(src).is_dir() else Path(snapshot_download(src, local_files_only=True))
+    if Path(src).is_dir():
+        src_dir = Path(src)
+    else:
+        try:
+            src_dir = Path(snapshot_download(src, local_files_only=True))
+        except LocalEntryNotFoundError:
+            print(f"{src} not cached; downloading...")
+            src_dir = Path(snapshot_download(src, allow_patterns=["*.json", "*.safetensors", "*.txt"]))
     hf = json.loads((src_dir / "config.json").read_text())
     dims = {
         "n_mels": hf["num_mel_bins"],
