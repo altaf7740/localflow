@@ -3,6 +3,8 @@
 WHISPER_HF := openai/whisper-large-v3-turbo
 WHISPER_MLX := src/static/models/whisper-large-v3-turbo-mlx
 CLEANUP_MODEL := qwen2.5:7b-instruct
+# this repo's interpreter only: LocalVoice and other projects also run "python -m src.main"
+APP_PROCESS := $(CURDIR)/.venv/bin/python.* -m src.main
 
 # Colors
 C := \033[36m
@@ -48,10 +50,10 @@ start:
 	uv run python -m src.main
 
 stop:
-	@pkill -f "python -m src.main" 2>/dev/null && echo "LocalFlow stopped" || echo "LocalFlow not running"
+	@pkill -f "$(APP_PROCESS)" 2>/dev/null && echo "LocalFlow stopped" || echo "LocalFlow not running"
 
 status:
-	@pgrep -f "python -m src.main" > /dev/null && echo "LocalFlow is running" || echo "LocalFlow is NOT running"
+	@pgrep -f "$(APP_PROCESS)" > /dev/null && echo "LocalFlow is running" || echo "LocalFlow is NOT running"
 
 restart: stop start
 

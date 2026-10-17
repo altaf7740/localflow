@@ -3,6 +3,10 @@
 Fully local, Wispr Flow–style dictation for macOS, Windows and Linux that handles Hinglish.
 Hold the hotkey (**Left ⌥** on macOS, **Right Ctrl** on Windows/Linux), speak, release — cleaned-up text (Hindi in Roman script) is pasted into the focused app.
 
+For the other direction — select Hinglish text and hear it read aloud — see
+[LocalVoice](https://github.com/altaf7740/localvoice). The two use different hotkeys and can run at the same time;
+`make stop` / `make status` in each repo only touch that repo's app.
+
 ## Pipeline
 
 1. **Record** — `sounddevice`, 16 kHz mono, while the hotkey is held.
