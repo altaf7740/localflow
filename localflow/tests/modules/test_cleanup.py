@@ -1,6 +1,6 @@
-from src.core.config.settings import Config
-from src.modules.cleanup import services
-from src.modules.cleanup.prompt import TRANSLITERATE_PROMPT
+from localflow.core.config.settings import Config
+from localflow.modules.cleanup import services
+from localflow.modules.cleanup.prompt import TRANSLITERATE_PROMPT
 
 
 def test_disabled_cleanup_returns_raw_text():

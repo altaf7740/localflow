@@ -9,8 +9,8 @@ dist/
 .venv
 
 # Model weights (converted locally, see `make model`)
-src/static/models/*
-!src/static/models/.gitkeep
+localflow/static/models/*
+!localflow/static/models/.gitkeep
 
 # Tooling caches
 .pytest_cache/

@@ -1,10 +1,10 @@
-.PHONY: help install model start stop status restart eval test lint lint-fix check clean
+.PHONY: help install model start stop status restart web eval test lint lint-fix check clean
 
 WHISPER_HF := openai/whisper-large-v3-turbo
-WHISPER_MLX := src/static/models/whisper-large-v3-turbo-mlx
+WHISPER_MLX := localflow/static/models/whisper-large-v3-turbo-mlx
 CLEANUP_MODEL := qwen2.5:7b-instruct
-# this repo's interpreter only: LocalVoice and other projects also run "python -m src.main"
-APP_PROCESS := $(CURDIR)/.venv/bin/python.* -m src.main
+# this repo's interpreter only, so another checkout of LocalFlow keeps running
+APP_PROCESS := $(CURDIR)/.venv/bin/python.* -m localflow.main
 
 # Colors
 C := \033[36m
@@ -23,9 +23,10 @@ help:
 	@echo "  $(G)stop$(R)         Stop a running LocalFlow"
 	@echo "  $(G)status$(R)       Check if LocalFlow is running"
 	@echo "  $(G)restart$(R)      Stop, then start"
+	@echo "  $(G)web$(R)          Dictate over HTTP + test page at http://localhost:8766 [HOST= PORT= CORS=]"
 	@echo ""
 	@echo "$(C)Evaluation:$(R)"
-	@echo "  $(G)eval$(R)         Score ASR + cleanup on src/static/eval (ARGS=\"--no-cleanup --llm <model>\")"
+	@echo "  $(G)eval$(R)         Score ASR + cleanup on localflow/static/eval (ARGS=\"--no-cleanup --llm <model>\")"
 	@echo ""
 	@echo "$(C)Testing & Code Quality:$(R)"
 	@echo "  $(G)test$(R)         Run tests"
@@ -47,7 +48,7 @@ endif
 	ollama pull $(CLEANUP_MODEL)
 
 start:
-	uv run python -m src.main
+	uv run python -m localflow.main
 
 stop:
 	@pkill -f "$(APP_PROCESS)" 2>/dev/null && echo "LocalFlow stopped" || echo "LocalFlow not running"
@@ -56,6 +57,9 @@ status:
 	@pgrep -f "$(APP_PROCESS)" > /dev/null && echo "LocalFlow is running" || echo "LocalFlow is NOT running"
 
 restart: stop start
+
+web:
+	uv run python -m scripts.web $(if $(HOST),--host $(HOST)) $(if $(PORT),--port $(PORT)) $(if $(CORS),--cors $(foreach o,$(CORS),'$(o)'))
 
 eval:
 	uv run python -m scripts.run_eval $(ARGS)

@@ -1,7 +1,7 @@
 import numpy as np
 
-from src.core.config.settings import Config
-from src.modules.asr import services
+from localflow.core.config.settings import Config
+from localflow.modules.asr import services
 
 
 def _fail(*args, **kwargs):

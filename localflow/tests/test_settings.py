@@ -1,7 +1,7 @@
 import json
 
-from src.core.config import settings
-from src.core.config.settings import Config
+from localflow.core.config import settings
+from localflow.core.config.settings import Config
 
 
 def test_defaults_when_no_config_file(tmp_path, monkeypatch):
