@@ -1,7 +1,7 @@
 .PHONY: help install model start stop status restart eval test lint lint-fix check clean
 
 WHISPER_HF := openai/whisper-large-v3-turbo
-WHISPER_MLX := src/static/models/whisper-large-v3-turbo-mlx
+WHISPER_MLX := localflow/static/models/whisper-large-v3-turbo-mlx
 CLEANUP_MODEL := qwen2.5:7b-instruct
 
 # Colors
@@ -23,7 +23,7 @@ help:
 	@echo "  $(G)restart$(R)      Stop, then start"
 	@echo ""
 	@echo "$(C)Evaluation:$(R)"
-	@echo "  $(G)eval$(R)         Score ASR + cleanup on src/static/eval (ARGS=\"--no-cleanup --llm <model>\")"
+	@echo "  $(G)eval$(R)         Score ASR + cleanup on localflow/static/eval (ARGS=\"--no-cleanup --llm <model>\")"
 	@echo ""
 	@echo "$(C)Testing & Code Quality:$(R)"
 	@echo "  $(G)test$(R)         Run tests"
@@ -45,13 +45,13 @@ endif
 	ollama pull $(CLEANUP_MODEL)
 
 start:
-	uv run python -m src.main
+	uv run python -m localflow.main
 
 stop:
-	@pkill -f "python -m src.main" 2>/dev/null && echo "LocalFlow stopped" || echo "LocalFlow not running"
+	@pkill -f "python -m localflow.main" 2>/dev/null && echo "LocalFlow stopped" || echo "LocalFlow not running"
 
 status:
-	@pgrep -f "python -m src.main" > /dev/null && echo "LocalFlow is running" || echo "LocalFlow is NOT running"
+	@pgrep -f "python -m localflow.main" > /dev/null && echo "LocalFlow is running" || echo "LocalFlow is NOT running"
 
 restart: stop start
 

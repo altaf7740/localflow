@@ -4,9 +4,9 @@ import numpy as np
 import sounddevice as sd
 from pynput import keyboard
 
-from src.core import dictation
-from src.core.config.settings import Config
-from src.core.dictation import IDLE, RECORDING, Dictation
+from localflow.core import dictation
+from localflow.core.config.settings import Config
+from localflow.core.dictation import IDLE, RECORDING, Dictation
 
 
 class FakeRecorder:

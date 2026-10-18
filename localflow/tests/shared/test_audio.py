@@ -3,8 +3,8 @@ import wave
 import numpy as np
 import pytest
 
-from src.shared import audio
-from src.shared.audio import SAMPLE_RATE, Recorder, is_dead_mic, load_wav
+from localflow.shared import audio
+from localflow.shared.audio import SAMPLE_RATE, Recorder, is_dead_mic, load_wav
 
 
 def _write_wav(path, samples: np.ndarray, rate=SAMPLE_RATE, channels=1):

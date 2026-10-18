@@ -1,4 +1,4 @@
-"""Compare ASR configs on src/static/eval/clips against src/static/eval/references.tsv.
+"""Compare ASR configs on localflow/static/eval/clips against localflow/static/eval/references.tsv.
 
 Usage: make eval [ARGS="--no-cleanup --llm <ollama model>"]
    or: uv run python -m scripts.run_eval [--no-cleanup] [--llm <ollama model>]
@@ -8,10 +8,10 @@ import sys
 import time
 from dataclasses import replace
 
-from src.core.config.settings import STATIC_DIR, Config
-from src.modules.asr import services as asr
-from src.modules.cleanup import services as cleanup
-from src.modules.evaluation.metrics import wer
+from localflow.core.config.settings import STATIC_DIR, Config
+from localflow.modules.asr import services as asr
+from localflow.modules.cleanup import services as cleanup
+from localflow.modules.evaluation.metrics import wer
 
 EVAL_DIR = STATIC_DIR / "eval"
 

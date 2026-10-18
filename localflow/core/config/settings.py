@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 CONFIG_PATH = Path.home() / ".localflow.json"
-BASE_DIR = Path(__file__).resolve().parents[2]  # src/
+BASE_DIR = Path(__file__).resolve().parents[2]  # localflow/
 STATIC_DIR = BASE_DIR / "static"
 MODELS_DIR = STATIC_DIR / "models"
 

@@ -36,7 +36,7 @@ Run `make` to list every target.
 
 ### macOS (Apple Silicon)
 
-`make model` converts the HuggingFace Whisper checkpoint into `src/static/models/` (or set
+`make model` converts the HuggingFace Whisper checkpoint into `localflow/static/models/` (or set
 `asr_model` to `"mlx-community/whisper-large-v3-turbo"` to download an MLX build instead).
 
 Grant your terminal **Microphone**, **Accessibility** and **Input Monitoring** in
@@ -63,7 +63,7 @@ in `~/.localflow.json` for ~1.5 s at lower accuracy.
 
 ## Config
 
-Optional `~/.localflow.json` overrides any field in `src/core/config/settings.py`, e.g.:
+Optional `~/.localflow.json` overrides any field in `localflow/core/config/settings.py`, e.g.:
 
 ```json
 { "hotkey": "cmd_r", "vocabulary": ["Kubernetes", "Altaf", "Taikisha"], "faster_whisper_model": "large-v3" }
@@ -88,14 +88,14 @@ make eval ARGS="--no-cleanup"               # ASR only
 make eval ARGS="--llm qwen2.5:7b-instruct"  # try another Ollama model
 ```
 
-Add your own recordings to `src/static/eval/clips/<id>.wav` (16 kHz mono) with the expected
-Roman-Hinglish text in `src/static/eval/references.tsv`. The bundled clips are synthetic
+Add your own recordings to `localflow/static/eval/clips/<id>.wav` (16 kHz mono) with the expected
+Roman-Hinglish text in `localflow/static/eval/references.tsv`. The bundled clips are synthetic
 (macOS "Lekha" voice) — real voice samples are a much better benchmark.
 
 ## Development
 
 ```sh
-make test       # pytest (src/tests)
+make test       # pytest (localflow/tests)
 make lint-fix   # ruff check --fix + ruff format
 make check      # lint-fix + test
 ```
@@ -108,7 +108,7 @@ make check      # lint-fix + test
 ├── scripts/
 │   ├── convert_hf_whisper.py   # HF Whisper → MLX weights (`make model`)
 │   └── run_eval.py             # WER benchmark (`make eval`)
-└── src/
+└── localflow/
     ├── main.py                 # entry point: menu bar (macOS) or tray (Windows/Linux)
     ├── core/
     │   ├── config/settings.py  # Config + ~/.localflow.json overrides

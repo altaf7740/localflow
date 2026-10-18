@@ -1,4 +1,4 @@
-from src.modules.evaluation.metrics import normalize, wer
+from localflow.modules.evaluation.metrics import normalize, wer
 
 
 def test_normalize_folds_spelling_variants():
