@@ -1,4 +1,4 @@
-.PHONY: help install model start stop status restart eval test lint lint-fix check clean
+.PHONY: help install model start stop status restart web eval test lint lint-fix check clean
 
 WHISPER_HF := openai/whisper-large-v3-turbo
 WHISPER_MLX := localflow/static/models/whisper-large-v3-turbo-mlx
@@ -21,6 +21,7 @@ help:
 	@echo "  $(G)stop$(R)         Stop a running LocalFlow"
 	@echo "  $(G)status$(R)       Check if LocalFlow is running"
 	@echo "  $(G)restart$(R)      Stop, then start"
+	@echo "  $(G)web$(R)          Dictate over HTTP + test page at http://localhost:8766 [HOST= PORT= CORS=]"
 	@echo ""
 	@echo "$(C)Evaluation:$(R)"
 	@echo "  $(G)eval$(R)         Score ASR + cleanup on localflow/static/eval (ARGS=\"--no-cleanup --llm <model>\")"
@@ -54,6 +55,9 @@ status:
 	@pgrep -f "python -m localflow.main" > /dev/null && echo "LocalFlow is running" || echo "LocalFlow is NOT running"
 
 restart: stop start
+
+web:
+	uv run python -m scripts.web $(if $(HOST),--host $(HOST)) $(if $(PORT),--port $(PORT)) $(if $(CORS),--cors $(foreach o,$(CORS),'$(o)'))
 
 eval:
 	uv run python -m scripts.run_eval $(ARGS)

@@ -1,5 +1,6 @@
 import threading
 import wave
+from typing import BinaryIO
 
 import numpy as np
 import sounddevice as sd
@@ -60,10 +61,11 @@ def is_dead_mic(audio: np.ndarray) -> bool:
     return audio.size >= SAMPLE_RATE // 4 and not np.any(audio)
 
 
-def load_wav(path: str) -> np.ndarray:
-    """Read a 16 kHz mono 16-bit WAV as float32 in [-1, 1]."""
-    with wave.open(path, "rb") as f:
+def load_wav(source: str | BinaryIO) -> np.ndarray:
+    """Read a 16 kHz mono 16-bit WAV (a path or file object) as float32 in [-1, 1]."""
+    with wave.open(source, "rb") as f:
         if (f.getframerate(), f.getnchannels(), f.getsampwidth()) != (SAMPLE_RATE, 1, 2):
-            raise ValueError(f"{path}: expected 16 kHz mono 16-bit WAV (convert with ffmpeg -ar 16000 -ac 1)")
+            name = source if isinstance(source, str) else "audio"
+            raise ValueError(f"{name}: expected 16 kHz mono 16-bit WAV (convert with ffmpeg -ar 16000 -ac 1)")
         data = f.readframes(f.getnframes())
     return np.frombuffer(data, dtype=np.int16).astype(np.float32) / 32768.0
