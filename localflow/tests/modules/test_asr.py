@@ -28,6 +28,14 @@ def test_vocabulary_is_appended_to_prompt(monkeypatch):
     assert seen["prompt"].endswith("Kubernetes, Altaf.")
 
 
+def test_empty_prompt_is_passed_as_none(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(services, "_use_mlx", lambda cfg: True)
+    monkeypatch.setattr(services, "_transcribe_mlx", lambda audio, prompt, cfg: seen.setdefault("prompt", prompt))
+    services.transcribe(np.full(32000, 0.5, dtype=np.float32), Config(asr_prompt=""))
+    assert seen["prompt"] is None
+
+
 def test_auto_backend_follows_platform(monkeypatch):
     monkeypatch.setattr(services, "APPLE_SILICON", False)
     assert services._use_mlx(Config(asr_backend="auto")) is False

@@ -9,14 +9,27 @@ For the other direction — select Hinglish text and hear it read aloud — see
 
 ## Pipeline
 
-1. **Record** — `sounddevice`, 16 kHz mono, while the hotkey is held.
-2. **ASR** — Whisper large-v3-turbo, `language="hi"`: MLX on Apple Silicon, faster-whisper elsewhere
-   (CUDA if available, else CPU int8). This recognises Hindi words most
-   accurately (output is Devanagari + English).
-3. **Cleanup** — `qwen2.5:7b-instruct` via Ollama: transliterates to Roman Hinglish, removes fillers,
-   fixes punctuation. Leftover Devanagari triggers a narrow transliteration pass. If Ollama is down
-   the raw transcript is pasted.
-4. **Paste** — clipboard + ⌘V / Ctrl+V, then the previous clipboard is restored.
+1. **Record**: `sounddevice`, 16 kHz mono, while the hotkey is held.
+2. **ASR**
+   - **Apple Silicon:** [Whisper-Hindi2Hinglish-Apex](https://huggingface.co/Oriserve/Whisper-Hindi2Hinglish-Apex)
+     on MLX. It's a large-v3-turbo fine-tune that writes Hindi in Roman script itself, so no transliteration pass is needed.
+   - **Elsewhere:** Whisper large-v3-turbo via faster-whisper (CUDA if available, else CPU int8), with
+     `language="hi"`, which outputs Devanagari + English.
+3. **Cleanup**
+   - **Rules, every platform, no model:**
+     - Drop "um", "uh" and "hmm".
+     - Resolve self-corrections:
+       - "kal nahin parso" → "parso".
+       - "Rahul ko call karo, actually Amit ko call karo" → "Amit ko call karo": the replacement echoes the
+         words it replaces, and they're swapped.
+     - Anything that doesn't line up is left as spoken, so negations ("main nahi aaunga", "aaj nahi to kal")
+       and "…, actually …" used as "by the way" stay intact.
+   - **Windows/Linux only:** `qwen2.5:7b-instruct` via Ollama transliterates stock Whisper's Devanagari to Roman
+     Hinglish. If Ollama is down, the raw transcript is pasted.
+
+   On the bundled eval clips (M2 Pro), Apex + rules scored WER 0.048 at 0.63 s/clip, versus 0.055 at
+   1.27 s/clip for stock turbo + LLM.
+4. **Paste**: clipboard + ⌘V / Ctrl+V, then the previous clipboard is restored.
 
 Nothing leaves the machine.
 
@@ -24,15 +37,16 @@ Nothing leaves the machine.
 
 | | macOS (Apple Silicon) | Windows | Linux |
 |---|---|---|---|
-| ASR | MLX (GPU) | faster-whisper (CUDA or CPU) | faster-whisper (CUDA or CPU) |
+| ASR | Hinglish Whisper, MLX (GPU) | faster-whisper (CUDA or CPU) | faster-whisper (CUDA or CPU) |
+| Cleanup LLM | none | Ollama | Ollama |
 | UI | menu bar | system tray | system tray |
 | Hotkey | Left ⌥ | Right Ctrl | Right Ctrl |
 
-Common to all: install [uv](https://docs.astral.sh/uv/) and [Ollama](https://ollama.com), then
+Install [uv](https://docs.astral.sh/uv/) (plus [Ollama](https://ollama.com) on Windows/Linux), then
 
 ```sh
 make install   # uv sync --all-groups
-make model     # convert Whisper to MLX (Apple Silicon only) + ollama pull qwen2.5:7b-instruct
+make model     # Apple Silicon: convert Hinglish Whisper to MLX; else: ollama pull qwen2.5:7b-instruct
 make start
 ```
 
@@ -70,8 +84,9 @@ Tailscale or Cloudflare Tunnel instead of forwarding a router port.
 
 ### macOS (Apple Silicon)
 
-`make model` converts the HuggingFace Whisper checkpoint into `localflow/static/models/` (or set
-`asr_model` to `"mlx-community/whisper-large-v3-turbo"` to download an MLX build instead).
+`make model` downloads Oriserve/Whisper-Hindi2Hinglish-Apex (~1.6 GB) and converts it into
+`localflow/static/models/`. To go back to stock Whisper, set `asr_model` to
+`"mlx-community/whisper-large-v3-turbo"` and `asr_language` to `"hi"`.
 
 Grant your terminal **Microphone**, **Accessibility** and **Input Monitoring** in
 System Settings → Privacy & Security, then restart the app.
@@ -117,14 +132,15 @@ Windows/Linux a tray notification asks you to pick one.
 ## Eval
 
 ```sh
-make eval                                   # ASR + cleanup
-make eval ARGS="--no-cleanup"               # ASR only
-make eval ARGS="--llm qwen2.5:7b-instruct"  # try another Ollama model
+make eval                                          # configured pipeline: WER, median latency, peak memory
+make eval ARGS="--asr path/to/other-mlx-model:en"  # compare another MLX Whisper (repeatable)
+make eval ARGS="--llm qwen2.5:7b-instruct"         # also run it with LLM cleanup
 ```
 
 Add your own recordings to `localflow/static/eval/clips/<id>.wav` (16 kHz mono) with the expected
 Roman-Hinglish text in `localflow/static/eval/references.tsv`. The bundled clips are synthetic
-(macOS "Lekha" voice) — real voice samples are a much better benchmark.
+(macOS "Lekha" voice) and fluent. Real voice samples, including fillers and self-corrections
+("kal, nahi, parso"), are a much better benchmark.
 
 ## Development
 
@@ -141,7 +157,7 @@ make check      # lint-fix + test
 ├── pyproject.toml
 ├── scripts/
 │   ├── convert_hf_whisper.py   # HF Whisper → MLX weights (`make model`)
-│   ├── run_eval.py             # WER benchmark (`make eval`)
+│   ├── run_eval.py             # WER + latency benchmark (`make eval`)
 │   └── web.py, web.html        # HTTP API + test page (`make web`)
 └── localflow/
     ├── main.py                 # entry point: menu bar (macOS) or tray (Windows/Linux)

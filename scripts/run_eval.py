@@ -1,7 +1,12 @@
-"""Compare ASR configs on localflow/static/eval/clips against localflow/static/eval/references.tsv.
+"""Score pipelines on localflow/static/eval/clips against localflow/static/eval/references.tsv.
 
-Usage: make eval [ARGS="--no-cleanup --llm <ollama model>"]
-   or: uv run python -m scripts.run_eval [--no-cleanup] [--llm <ollama model>]
+Always runs the configured pipeline (Config.load()), plus:
+  --asr <mlx model dir>[:lang]  another Whisper model, no LLM cleanup (repeatable; lang defaults to "en")
+  --llm <ollama model>          the configured ASR followed by LLM cleanup with that model
+  --no-cleanup                  turn LLM cleanup off for the configured pipeline
+
+Usage: make eval [ARGS="--asr <dir>:hi --llm qwen2.5:7b-instruct"]
+   or: uv run python -m scripts.run_eval [same flags]
 """
 
 import sys
@@ -14,35 +19,70 @@ from localflow.modules.cleanup import services as cleanup
 from localflow.modules.evaluation.metrics import wer
 
 EVAL_DIR = STATIC_DIR / "eval"
+RUNS = 3  # timed repeats per clip; the median is reported
+
+try:
+    import mlx.core as mx
+except ImportError:  # faster-whisper platforms
+    mx = None
+
+
+def flag_values(name: str) -> list[str]:
+    return [sys.argv[i + 1] for i, arg in enumerate(sys.argv[:-1]) if arg == name]
+
+
+def pipelines() -> dict[str, Config]:
+    base = Config.load()
+    if "--no-cleanup" in sys.argv:
+        base.cleanup_enabled = False
+    configs = {"configured": base}
+    for spec in flag_values("--asr"):
+        path, _, lang = spec.partition(":")
+        configs[spec] = replace(
+            base, asr_backend="mlx", asr_model=path, asr_language=lang or "en", cleanup_enabled=False
+        )
+    for model in flag_values("--llm"):
+        configs[f"configured + {model}"] = replace(base, cleanup_enabled=True, cleanup_model=model)
+    return configs
+
+
+def median(xs: list[float]) -> float:
+    return sorted(xs)[len(xs) // 2]
 
 
 def main():
-    use_cleanup = "--no-cleanup" not in sys.argv
     refs = dict(line.split("\t", 1) for line in (EVAL_DIR / "references.tsv").read_text().splitlines() if line)
-    base = Config.load()
-    if "--llm" in sys.argv:
-        base.cleanup_model = sys.argv[sys.argv.index("--llm") + 1]
-    configs = {
-        "turbo/en+prompt": replace(base, asr_language="en"),
-        "turbo/hi": replace(base, asr_language="hi"),
-    }
-    for name, cfg in configs.items():
-        cfg.cleanup_enabled = use_cleanup
+    rows = []
+    for name, cfg in pipelines().items():
+        if mx:
+            mx.reset_peak_memory()
         asr.warmup(cfg)
-        total, t_asr, t_llm = 0.0, 0.0, 0.0
+        cleanup.warmup(cfg)
+        scores, t_asr, t_llm = [], [], []
         print(f"\n=== {name} ===")
         for clip, ref in refs.items():
-            t0 = time.time()
-            raw = asr.transcribe(str(EVAL_DIR / "clips" / f"{clip}.wav"), cfg)
-            t1 = time.time()
-            out = cleanup.clean(raw, cfg)
-            t2 = time.time()
-            t_asr, t_llm = t_asr + t1 - t0, t_llm + t2 - t1
-            score = wer(ref, out)
-            total += score
-            print(f"{clip} WER={score:.2f}\n  raw: {raw}\n  out: {out}")
+            path = str(EVAL_DIR / "clips" / f"{clip}.wav")
+            a, c = [], []
+            for _ in range(RUNS):
+                t0 = time.perf_counter()
+                raw = asr.transcribe(path, cfg)
+                t1 = time.perf_counter()
+                out = cleanup.clean(raw, cfg)
+                a.append(t1 - t0)
+                c.append(time.perf_counter() - t1)
+            t_asr.append(median(a))
+            t_llm.append(median(c))
+            scores.append(wer(ref, out))
+            print(f"{clip} WER={scores[-1]:.2f}\n  raw: {raw}\n  out: {out}", flush=True)
         n = len(refs)
-        print(f"-> mean WER {total / n:.3f} | asr {t_asr / n:.2f}s | llm {t_llm / n:.2f}s per clip")
+        mem = f"{mx.get_peak_memory() / 1e9:.2f}" if mx else "-"
+        rows.append((name, sum(scores) / n, sum(t_asr) / n, sum(t_llm) / n, mem))
+        if mx:
+            mx.clear_cache()
+    print("\n| pipeline | mean WER | asr s/clip | cleanup s/clip | total s/clip | peak MLX GB |")
+    print("|---|---|---|---|---|---|")
+    for name, w, a, c, mem in rows:
+        print(f"| {name} | {w:.3f} | {a:.2f} | {c:.2f} | {a + c:.2f} | {mem} |")
 
 
 if __name__ == "__main__":

@@ -7,8 +7,9 @@ from localflow.core.config.settings import Config
 def test_defaults_when_no_config_file(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "CONFIG_PATH", tmp_path / "missing.json")
     cfg = Config.load()
-    assert cfg.asr_language == "hi"
-    assert cfg.cleanup_enabled is True
+    # Apex (MLX) writes Roman Hinglish itself; stock Whisper needs "hi" + the LLM transliteration
+    assert cfg.asr_language == ("en" if settings.APPLE_SILICON else "hi")
+    assert cfg.cleanup_enabled is not settings.APPLE_SILICON
 
 
 def test_config_file_overrides_and_ignores_unknown_keys(tmp_path, monkeypatch):

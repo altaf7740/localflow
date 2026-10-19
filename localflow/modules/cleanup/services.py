@@ -3,13 +3,18 @@ import re
 import requests
 
 from ...core.config.settings import Config
+from . import rules
 from .prompt import EXAMPLES, SYSTEM_PROMPT, TRANSLITERATE_PROMPT
 
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 
 
 def clean(text: str, cfg: Config) -> str:
-    if not text or not cfg.cleanup_enabled:
+    if not text:
+        return text
+    text = rules.clean(text)
+    # the LLM is only needed to transliterate stock Whisper's Devanagari; Roman text is done
+    if not cfg.cleanup_enabled or not DEVANAGARI.search(text):
         return text
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for raw, fixed in EXAMPLES:
@@ -21,6 +26,12 @@ def clean(text: str, cfg: Config) -> str:
         retry = [{"role": "system", "content": TRANSLITERATE_PROMPT}, {"role": "user", "content": out}]
         out = _chat(retry, cfg) or out
     return out
+
+
+def warmup(cfg: Config):
+    """Load the model into Ollama now, so the first dictation doesn't wait for it."""
+    if cfg.cleanup_enabled:
+        _chat([{"role": "user", "content": "hi"}], cfg)
 
 
 def _wrap(text: str) -> str:

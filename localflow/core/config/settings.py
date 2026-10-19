@@ -1,4 +1,5 @@
 import json
+import platform
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -7,6 +8,7 @@ CONFIG_PATH = Path.home() / ".localflow.json"
 BASE_DIR = Path(__file__).resolve().parents[2]  # localflow/
 STATIC_DIR = BASE_DIR / "static"
 MODELS_DIR = STATIC_DIR / "models"
+APPLE_SILICON = sys.platform == "darwin" and platform.machine() == "arm64"
 
 HINGLISH_PROMPT = (
     "Haan bhai, main abhi ghar pe hoon. Tum log lunch ke baad call join kar lena, "
@@ -18,13 +20,17 @@ HINGLISH_PROMPT = (
 class Config:
     # "auto" = MLX on Apple Silicon, faster-whisper (CUDA or CPU) everywhere else
     asr_backend: str = "auto"
-    asr_model: str = str(MODELS_DIR / "whisper-large-v3-turbo-mlx")
+    # Oriserve Whisper-Hindi2Hinglish-Apex: a large-v3-turbo fine-tune that writes Roman Hinglish itself
+    asr_model: str = str(MODELS_DIR / "whisper-hindi2hinglish-apex-mlx")
+    # no CTranslate2 build of Apex exists yet, so faster-whisper stays on stock turbo + LLM cleanup
     faster_whisper_model: str = "large-v3-turbo"
-    # "hi" recognises Hindi words most accurately (in Devanagari); the cleanup
-    # step transliterates to Roman. "en" writes Roman directly but misspells.
-    asr_language: str = "hi"
+    # Apex: "en" keeps its Roman output ("hi" breaks it). Stock turbo: "hi" recognises Hindi words
+    # most accurately (in Devanagari) and the cleanup step transliterates to Roman.
+    asr_language: str = "en" if APPLE_SILICON else "hi"
     asr_prompt: str = HINGLISH_PROMPT
-    cleanup_enabled: bool = True
+    # Ollama LLM pass, only needed to transliterate stock Whisper's Devanagari. Filler and
+    # self-correction rules always run.
+    cleanup_enabled: bool = not APPLE_SILICON
     cleanup_model: str = "qwen2.5:7b-instruct"
     ollama_url: str = "http://localhost:11434"
     # pynput key name held to dictate. Right Alt is AltGr on many Windows/Linux layouts.

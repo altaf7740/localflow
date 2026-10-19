@@ -41,7 +41,7 @@ class Dictation:
 
     def _warmup(self):
         asr.warmup(self.cfg)
-        cleanup.clean("hello", self.cfg)
+        cleanup.warmup(self.cfg)
         self.on_state(IDLE)
 
     def _on_press(self, key):

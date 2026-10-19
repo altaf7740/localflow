@@ -1,13 +1,9 @@
-import platform
-import sys
-
 import numpy as np
 
-from ...core.config.settings import Config
+from ...core.config.settings import APPLE_SILICON, Config
 from ...shared.audio import load_wav
 
 MIN_SAMPLES = 16000 // 4  # ignore taps shorter than 250 ms
-APPLE_SILICON = sys.platform == "darwin" and platform.machine() == "arm64"
 
 _faster_whisper_model = None
 
@@ -20,6 +16,8 @@ def transcribe(audio: np.ndarray | str, cfg: Config) -> str:
     prompt = cfg.asr_prompt
     if cfg.vocabulary:
         prompt += " " + ", ".join(cfg.vocabulary) + "."
+    # an empty prompt still becomes a lone space token, which derails decoding
+    prompt = prompt.strip() or None
     if _use_mlx(cfg):
         return _transcribe_mlx(audio, prompt, cfg)
     return _transcribe_faster_whisper(audio, prompt, cfg)
@@ -35,7 +33,7 @@ def _use_mlx(cfg: Config) -> bool:
     return cfg.asr_backend == "mlx"
 
 
-def _transcribe_mlx(audio, prompt: str, cfg: Config) -> str:
+def _transcribe_mlx(audio, prompt: str | None, cfg: Config) -> str:
     import mlx_whisper
 
     result = mlx_whisper.transcribe(
@@ -49,7 +47,7 @@ def _transcribe_mlx(audio, prompt: str, cfg: Config) -> str:
     return result["text"].strip()
 
 
-def _transcribe_faster_whisper(audio, prompt: str, cfg: Config) -> str:
+def _transcribe_faster_whisper(audio, prompt: str | None, cfg: Config) -> str:
     segments, _ = _load_faster_whisper(cfg).transcribe(
         audio,
         language=cfg.asr_language,

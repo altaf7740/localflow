@@ -1,7 +1,7 @@
 .PHONY: help install model start stop status restart web eval test lint lint-fix check clean
 
-WHISPER_HF := openai/whisper-large-v3-turbo
-WHISPER_MLX := localflow/static/models/whisper-large-v3-turbo-mlx
+WHISPER_HF := Oriserve/Whisper-Hindi2Hinglish-Apex
+WHISPER_MLX := localflow/static/models/whisper-hindi2hinglish-apex-mlx
 CLEANUP_MODEL := qwen2.5:7b-instruct
 # this repo's interpreter only, so another checkout of LocalFlow keeps running
 APP_PROCESS := $(CURDIR)/.venv/bin/python.* -m localflow.main
@@ -16,7 +16,7 @@ help:
 	@echo "$(Y)Usage:$(R) make [target]\n"
 	@echo "$(C)Setup:$(R)"
 	@echo "  $(G)install$(R)      Install dependencies (incl. dev tools)"
-	@echo "  $(G)model$(R)        Convert Whisper to MLX (Apple Silicon) and pull the Ollama cleanup model"
+	@echo "  $(G)model$(R)        Convert Hinglish Whisper to MLX (Apple Silicon), else pull the Ollama cleanup model"
 	@echo ""
 	@echo "$(C)App:$(R)"
 	@echo "  $(G)start$(R)        Run LocalFlow (menu bar on macOS, tray on Windows/Linux)"
@@ -26,7 +26,7 @@ help:
 	@echo "  $(G)web$(R)          Dictate over HTTP + test page at http://localhost:8766 [HOST= PORT= CORS=]"
 	@echo ""
 	@echo "$(C)Evaluation:$(R)"
-	@echo "  $(G)eval$(R)         Score ASR + cleanup on localflow/static/eval (ARGS=\"--no-cleanup --llm <model>\")"
+	@echo "  $(G)eval$(R)         Score WER + latency on localflow/static/eval (ARGS=\"--asr <dir>[:lang] --llm <model>\")"
 	@echo ""
 	@echo "$(C)Testing & Code Quality:$(R)"
 	@echo "  $(G)test$(R)         Run tests"
@@ -44,8 +44,9 @@ model:
 ifeq ($(shell uname -s)-$(shell uname -m),Darwin-arm64)
 	@test -f $(WHISPER_MLX)/weights.safetensors && echo "MLX Whisper already at $(WHISPER_MLX)" \
 		|| uv run python -m scripts.convert_hf_whisper $(WHISPER_HF) $(WHISPER_MLX)
-endif
+else
 	ollama pull $(CLEANUP_MODEL)
+endif
 
 start:
 	uv run python -m localflow.main

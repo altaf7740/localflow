@@ -69,7 +69,7 @@ def warmup(cfg: Config):
     t0 = time.time()
     with _asr_lock:
         asr.warmup(cfg)
-    cleanup.clean("hello", cfg)
+    cleanup.warmup(cfg)
     print(f"[web] ready in {time.time() - t0:.1f}s", flush=True)
 
 
