@@ -16,6 +16,7 @@ dependencies = [
     # macOS  (localflow/modules/ui/menubar.py, localflow/shared/paste.py)
     # ===========================================================================
     "mlx-whisper>=0.4.3; sys_platform == 'darwin' and platform_machine == 'arm64'",  # Whisper on Apple GPU
+    "mlx-lm>=0.28; sys_platform == 'darwin' and platform_machine == 'arm64'",        # Cleanup model + training
     "pyobjc-framework-cocoa>=12.2.2; sys_platform == 'darwin'",                      # Clipboard
     "pyobjc-framework-quartz>=12.2.2; sys_platform == 'darwin'",                     # ⌘V key events
     "rumps>=0.4.0; sys_platform == 'darwin'",                                        # Menu-bar app

@@ -1,8 +1,10 @@
-.PHONY: help install model start stop status restart web eval test lint lint-fix check clean
+.PHONY: help install model start stop status restart web eval eval-cleanup train-cleanup test lint lint-fix check clean
 
 WHISPER_HF := Oriserve/Whisper-Hindi2Hinglish-Apex
 WHISPER_MLX := localflow/static/models/whisper-hindi2hinglish-apex-mlx
 CLEANUP_MODEL := qwen2.5:7b-instruct
+CLEANUP_BASE := mlx-community/Qwen2.5-0.5B-Instruct-4bit
+CLEANUP_MLX := localflow/static/models/hinglish-cleanup-mlx
 # this repo's interpreter only, so another checkout of LocalFlow keeps running
 APP_PROCESS := $(CURDIR)/.venv/bin/python.* -m localflow.main
 
@@ -27,6 +29,8 @@ help:
 	@echo ""
 	@echo "$(C)Evaluation:$(R)"
 	@echo "  $(G)eval$(R)         Score WER + latency on localflow/static/eval (ARGS=\"--asr <dir>[:lang] --llm <model>\")"
+	@echo "  $(G)eval-cleanup$(R) Score self-correction cleanup, rules vs model (ARGS=\"--model <dir> --valid\")"
+	@echo "  $(G)train-cleanup$(R) Generate data, fine-tune the cleanup model (MLX) and install it"
 	@echo ""
 	@echo "$(C)Testing & Code Quality:$(R)"
 	@echo "  $(G)test$(R)         Run tests"
@@ -64,6 +68,16 @@ web:
 
 eval:
 	uv run python -m scripts.run_eval $(ARGS)
+
+eval-cleanup:
+	uv run python -m scripts.eval_cleanup $(ARGS)
+
+train-cleanup:
+	@test -f training/data/hinglish_upload_v1.json || (mkdir -p training/data && curl -L -o training/data/hinglish_upload_v1.json \
+		https://huggingface.co/datasets/findnitai/english-to-hinglish/resolve/main/hinglish_upload_v1.json)
+	uv run python -m training.generate_data
+	uv run mlx_lm.lora --config training/lora.yaml
+	uv run mlx_lm.fuse --model $(CLEANUP_BASE) --adapter-path training/out/adapters --save-path $(CLEANUP_MLX)
 
 test:
 	uv run pytest

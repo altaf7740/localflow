@@ -16,3 +16,7 @@ localflow/static/models/*
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# Cleanup-model training data and checkpoints (see training/README.md)
+training/data/
+training/out/

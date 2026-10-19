@@ -1,7 +1,7 @@
 import pytest
 
 from localflow.core.config.settings import Config
-from localflow.modules.cleanup import rules, services
+from localflow.modules.cleanup import model, rules, services
 from localflow.modules.cleanup.prompt import TRANSLITERATE_PROMPT
 
 
@@ -98,3 +98,34 @@ def test_warmup_loads_the_model_only_when_cleanup_is_on(monkeypatch):
     services.warmup(Config(cleanup_enabled=False))
     services.warmup(Config(cleanup_enabled=True, cleanup_model="m"))
     assert calls == ["m"]
+
+
+def test_model_output_is_used_when_available(monkeypatch):
+    monkeypatch.setattr(model, "available", lambda cfg: True)
+    monkeypatch.setattr(model, "clean", lambda text, cfg: "amit ko call karo.")
+    assert services.clean("Rahul ko bolo, nahi, Amit ko call karo.", Config()) == "Amit ko call karo."
+
+
+def test_rules_take_over_when_model_declines(monkeypatch):
+    monkeypatch.setattr(model, "available", lambda cfg: True)
+    monkeypatch.setattr(model, "clean", lambda text, cfg: None)
+    assert services.clean("Kal nahin parson office aaunga.", Config()) == "Parson office aaunga."
+
+
+def test_model_is_skipped_for_fluent_text_and_devanagari(monkeypatch):
+    monkeypatch.setattr(model, "_load", _no_llm)
+    assert model.clean("Kal ki meeting mein timeline discuss karna hai.", Config()) is None
+    monkeypatch.setattr(model, "available", _no_llm)
+    services.clean("कल मिलते हैं", Config(cleanup_enabled=False))
+
+
+@pytest.mark.parametrize(
+    "before, after, added",
+    [
+        ("Rahul ko call karo, actually Amit ko call karo.", "Amit ko call karo.", False),
+        ("Hum Monday ko milte hain, sorry, Wednesday ko.", "Hum Wednesday ko milte hain.", False),
+        ("Rahul ko call karo, actually Amit ko call karo.", "Sure, main Amit ko call karta hoon.", True),
+    ],
+)
+def test_guard_rejects_words_that_were_never_said(before, after, added):
+    assert model.adds_words(before, after) is added

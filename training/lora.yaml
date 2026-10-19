@@ -1,0 +1,27 @@
+# Pilot LoRA fine-tune of the cleanup model on Apple Silicon (mlx-lm).
+# uv run mlx_lm.lora --config training/lora.yaml
+model: mlx-community/Qwen2.5-0.5B-Instruct-4bit
+train: true
+data: training/data
+adapter_path: training/out/adapters
+fine_tune_type: lora
+mask_prompt: true  # learn only the cleaned text, not to reproduce the messy input
+num_layers: -1  # all 24 layers
+batch_size: 16
+iters: 2000  # ~0.5 epoch of 60k pairs; loss flattens well before
+learning_rate: 5e-5  # 2e-4 diverged right after warmup
+lr_schedule:
+  name: cosine_decay
+  warmup: 100
+  arguments: [5e-5, 2000, 1e-6]
+max_seq_length: 256
+steps_per_report: 50
+steps_per_eval: 500
+val_batches: 25
+save_every: 500
+grad_checkpoint: false
+seed: 0
+lora_parameters:
+  rank: 16
+  scale: 20.0
+  dropout: 0.0

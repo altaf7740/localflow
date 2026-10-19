@@ -3,7 +3,7 @@ import re
 import requests
 
 from ...core.config.settings import Config
-from . import rules
+from . import model, rules
 from .prompt import EXAMPLES, SYSTEM_PROMPT, TRANSLITERATE_PROMPT
 
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
@@ -12,6 +12,10 @@ DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 def clean(text: str, cfg: Config) -> str:
     if not text:
         return text
+    if not DEVANAGARI.search(text) and model.available(cfg):
+        out = model.clean(text, cfg)
+        if out is not None:
+            return out[:1].upper() + out[1:]
     text = rules.clean(text)
     # the LLM is only needed to transliterate stock Whisper's Devanagari; Roman text is done
     if not cfg.cleanup_enabled or not DEVANAGARI.search(text):
@@ -29,7 +33,8 @@ def clean(text: str, cfg: Config) -> str:
 
 
 def warmup(cfg: Config):
-    """Load the model into Ollama now, so the first dictation doesn't wait for it."""
+    """Load the cleanup models now, so the first dictation doesn't wait for them."""
+    model.warmup(cfg)
     if cfg.cleanup_enabled:
         _chat([{"role": "user", "content": "hi"}], cfg)
 

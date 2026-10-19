@@ -31,6 +31,9 @@ class Config:
     # Ollama LLM pass, only needed to transliterate stock Whisper's Devanagari. Filler and
     # self-correction rules always run.
     cleanup_enabled: bool = not APPLE_SILICON
+    # MLX model fine-tuned only for Hinglish self-corrections and fillers (training/); rules alone
+    # when the directory doesn't exist
+    cleanup_model_path: str = str(MODELS_DIR / "hinglish-cleanup-mlx")
     cleanup_model: str = "qwen2.5:7b-instruct"
     ollama_url: str = "http://localhost:11434"
     # pynput key name held to dictate. Right Alt is AltGr on many Windows/Linux layouts.
