@@ -4,7 +4,7 @@ Cases come from localflow/static/eval/cleanup.tsv (said<TAB>expected): self-corr
 resolve and negations or discourse words that must be left alone. --valid also scores the held-out
 synthetic pairs in training/data/valid.jsonl.
 
-Usage: make eval-cleanup [ARGS="--model <mlx model dir> --valid"]
+Usage: make eval-cleanup [ARGS="--model <mlx model dir> --llm <ollama model> --valid"]
    or: uv run python -m scripts.eval_cleanup [same flags]
 """
 
@@ -46,6 +46,8 @@ def main():
     model_path = sys.argv[sys.argv.index("--model") + 1] if "--model" in sys.argv else Config().cleanup_model_path
     rules_only = Config(cleanup_enabled=False, cleanup_model_path="")
     with_model = replace(rules_only, cleanup_model_path=model_path)
+    llm = sys.argv[sys.argv.index("--llm") + 1] if "--llm" in sys.argv else ""
+    with_llm = replace(rules_only, llm_cleanup=True, cleanup_model=llm)
     sets = {"cleanup.tsv": [tuple(line.split("\t")) for line in CASES.read_text().splitlines() if line]}
     if "--valid" in sys.argv:
         sets["valid.jsonl"] = [(r["prompt"], r["completion"]) for r in map(json.loads, VALID.open())]
@@ -57,6 +59,8 @@ def main():
             score(f"model ({Path(model_path).name}) + rules", with_model, cases, show)
         else:
             print(f"no model at {model_path}")
+        if llm:
+            score(f"{llm} (Ollama) + rules", with_llm, cases, show)
 
 
 if __name__ == "__main__":

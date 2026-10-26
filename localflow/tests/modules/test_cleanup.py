@@ -129,3 +129,22 @@ def test_model_is_skipped_for_fluent_text_and_devanagari(monkeypatch):
 )
 def test_guard_rejects_words_that_were_never_said(before, after, added):
     assert model.adds_words(before, after) is added
+
+
+def test_llm_cleanup_is_off_by_default_and_on_demand_for_roman_text(monkeypatch):
+    monkeypatch.setattr(services, "_chat", lambda messages, cfg: "Kal milte hain.")
+    assert services.clean("umm kal milte hain", Config(cleanup_enabled=False, cleanup_model_path="")) == "Kal milte hain"
+    on = Config(cleanup_enabled=False, cleanup_model_path="", llm_cleanup=True)
+    assert services.clean("umm kal milte hain", on) == "Kal milte hain."
+
+
+def test_llm_cleanup_output_with_an_invented_word_is_dropped(monkeypatch):
+    monkeypatch.setattr(services, "_chat", lambda messages, cfg: "Kal zaroor milte hain.")
+    on = Config(cleanup_enabled=False, cleanup_model_path="", llm_cleanup=True)
+    assert services.clean("kal milte hain", on) == "Kal milte hain"
+
+
+def test_llm_cleanup_falls_back_when_ollama_is_down(monkeypatch):
+    monkeypatch.setattr(services, "_chat", lambda messages, cfg: "")
+    on = Config(cleanup_enabled=False, cleanup_model_path="", llm_cleanup=True)
+    assert services.clean("kal milte hain", on) == "Kal milte hain"

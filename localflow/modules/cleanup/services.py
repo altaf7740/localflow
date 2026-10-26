@@ -17,14 +17,12 @@ def clean(text: str, cfg: Config) -> str:
         if out is not None:
             return out[:1].upper() + out[1:]
     text = rules.clean(text)
+    if cfg.llm_cleanup and not DEVANAGARI.search(text):
+        return _llm_cleanup(text, cfg)
     # the LLM is only needed to transliterate stock Whisper's Devanagari; Roman text is done
     if not cfg.cleanup_enabled or not DEVANAGARI.search(text):
         return text
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for raw, fixed in EXAMPLES:
-        messages += [{"role": "user", "content": _wrap(raw)}, {"role": "assistant", "content": fixed}]
-    messages.append({"role": "user", "content": _wrap(text)})
-    out = _chat(messages, cfg) or text
+    out = _chat(_few_shot(text), cfg) or text
     if DEVANAGARI.search(out):
         # the cleanup model sometimes copies Devanagari through; a narrow second pass fixes it
         retry = [{"role": "system", "content": TRANSLITERATE_PROMPT}, {"role": "user", "content": out}]
@@ -32,11 +30,24 @@ def clean(text: str, cfg: Config) -> str:
     return out
 
 
+def _llm_cleanup(text: str, cfg: Config) -> str:
+    """The Ollama model's cleanup of Roman text; `text` itself if it's down or made something up."""
+    out = _chat(_few_shot(text), cfg)
+    return out if out and not model.adds_words(text, out) else text
+
+
 def warmup(cfg: Config):
     """Load the cleanup models now, so the first dictation doesn't wait for them."""
     model.warmup(cfg)
-    if cfg.cleanup_enabled:
+    if cfg.cleanup_enabled or cfg.llm_cleanup:
         _chat([{"role": "user", "content": "hi"}], cfg)
+
+
+def _few_shot(text: str) -> list[dict]:
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for raw, fixed in EXAMPLES:
+        messages += [{"role": "user", "content": _wrap(raw)}, {"role": "assistant", "content": fixed}]
+    return messages + [{"role": "user", "content": _wrap(text)}]
 
 
 def _wrap(text: str) -> str:

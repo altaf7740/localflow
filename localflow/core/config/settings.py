@@ -34,6 +34,9 @@ class Config:
     # MLX model fine-tuned only for Hinglish self-corrections and fillers (training/); rules alone
     # when the directory doesn't exist
     cleanup_model_path: str = str(MODELS_DIR / "hinglish-cleanup-mlx")
+    # also run the Ollama model (cleanup_model) on Roman transcripts, to fix fillers, self-corrections
+    # and punctuation the rules miss. Its output is dropped if it adds a word the speaker didn't say.
+    llm_cleanup: bool = False
     cleanup_model: str = "qwen2.5:7b-instruct"
     ollama_url: str = "http://localhost:11434"
     # pynput key name held to dictate. Right Alt is AltGr on many Windows/Linux layouts.
